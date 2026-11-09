@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Explorar Jogos Públicos (API){% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pagina.css') }}">
+<style>
+.api-game-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+}
+
+.api-games-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.api-game-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.api-game-thumb {
+    width: 100%;
+    aspect-ratio: 0.72;
+    object-fit: contain;
+    object-position: center;
+    background: linear-gradient(145deg, #171624, #0d0d16);
+    display: block;
+}
+
+.api-game-content {
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: space-between;
+}
+
+.api-game-rating {
+    margin: 0 0 1rem;
+    color: #f0c674;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.api-game-rating small {
+    margin-left: 0.15rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.api-game-rating-unavailable {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.api-game-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.api-game-platform {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.api-game-title {
+    margin-bottom: 0.5rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.api-game-title a {
+    color: var(--text-primary);
+}
+
+.api-game-official-link {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.api-game-footer {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.catalog-load-more {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0 0;
+}
+
+.catalog-load-more[hidden] {
+    display: none;
+}
+
+.api-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background-color: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+@media (max-width: 1250px) {
+    .api-games-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1000px) {
+    .api-games-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .api-games-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 420px) {
+    .api-games-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <div>
+        <div class="hero-tag" style="margin-bottom: 0.5rem;">🌐 Base de Dados IGDB Oficial</div>
+        <h1 class="section-title">Explorar Catálogo IGDB de Jogos</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">
+            Catálogo completo com capas oficiais e informações integradas à <strong>IGDB (Twitch)</strong>. Encontre qualquer jogo e salve no seu diário com 1 clique!
+        </p>
+    </div>
+</div>
+
+<!-- Filtros e Busca da API IGDB -->
+<div class="filter-bar">
+    <form method="GET" action="{{ url_for('jogos.explorar_api') }}" class="filter-form" style="grid-template-columns: 2fr auto;">
+        <div>
+            <label for="busca" class="form-label">Buscar jogos no banco de dados do IGDB</label>
+            <input type="text" id="busca" name="busca" class="form-control" placeholder="Ex: The Witcher, Elden Ring, GTA, God of War..." value="{{ busca }}">
+            <input type="hidden" name="categoria" value="{{ categoria_selecionada }}">
+            <input type="hidden" name="plataforma" value="{{ plataforma_selecionada }}">
+            <input type="hidden" name="ordenacao" value="{{ ordenacao_selecionada }}">
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-self: flex-end;">
+            <button type="submit" class="btn btn-primary">Buscar no IGDB</button>
+            {% if busca %}
+                <a href="{{ url_for('jogos.explorar_api') }}" class="btn btn-secondary" title="Limpar Busca">✕</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Grid de Jogos vindos da API -->
+{% if jogos_api %}
+    <div style="margin-bottom: 1.25rem; color: var(--text-muted); font-size: 0.9rem;">
+        Exibindo <strong>{{ jogos_api|length }}</strong> jogo(s) carregados da API pública.
+    </div>
+
+    <div class="api-games-grid" id="apiGamesGrid">
+        {% include "api/_game_cards.html" %}
+    </div>
+    <div class="catalog-load-more">
+        <p id="catalogLoadMoreError" role="alert" hidden></p>
+        <button
+            type="button"
+            class="btn btn-secondary"
+            id="catalogLoadMore"
+            data-url="{{ url_for('jogos.explorar_api') }}"
+            data-offset="{{ offset + jogos_api|length }}"
+            data-busca="{{ busca }}"
+            data-categoria="{{ categoria_selecionada }}"
+            data-plataforma="{{ plataforma_selecionada }}"
+            data-ordenacao="{{ ordenacao_selecionada }}"
+            {% if jogos_api|length < 30 %}hidden{% endif %}
+        >Carregar mais</button>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📡</div>
+        <h3 class="empty-state-title">Nenhum jogo encontrado na API</h3>
+        <p class="empty-state-description">
+            Tente pesquisar com outro termo ou selecione outra categoria de jogos.
+        </p>
+        <a href="{{ url_for('jogos.explorar_api') }}" class="btn btn-secondary">Limpar Busca</a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/catalog.js') }}"></script>
+{% endblock %}

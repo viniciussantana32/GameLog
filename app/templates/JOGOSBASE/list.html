@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Meus Jogos Zerados - Listagem{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pagina.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <div>
+        <h1 class="section-title">
+            {% if current_user.is_authenticated and visao == 'meus' %}
+                🎮 Meus Jogos Zerados
+            {% else %}
+                🌐 Jogos Zerados da Comunidade
+            {% endif %}
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">
+            Explore e gerencie os títulos salvos no banco de dados JOGOSSALVOS.
+        </p>
+    </div>
+    
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        {% if current_user.is_authenticated %}
+            <div style="display: inline-flex; background: var(--bg-surface); padding: 0.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <a href="{{ url_for('jogos.listar', visao='meus', busca=busca, plataforma=plataforma_selecionada, ordenacao=ordenacao_selecionada) }}" class="btn btn-sm {% if visao == 'meus' %}btn-primary{% else %}btn-secondary{% endif %}" style="border: none;">
+                    Meus Jogos
+                </a>
+                <a href="{{ url_for('jogos.listar', visao='todos', busca=busca, plataforma=plataforma_selecionada, ordenacao=ordenacao_selecionada) }}" class="btn btn-sm {% if visao != 'meus' %}btn-primary{% else %}btn-secondary{% endif %}" style="border: none;">
+                    Todos
+                </a>
+            </div>
+            <a href="{{ url_for('jogos.criar') }}" class="btn btn-primary">
+                ➕ Cadastrar Novo Jogo
+            </a>
+        {% else %}
+            <a href="{{ url_for('auth.registro') }}" class="btn btn-primary">
+                ✨ Cadastre-se para Salvar Seus Jogos
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Barra de Filtros e Busca -->
+<div class="filter-bar">
+    <form method="GET" action="{{ url_for('jogos.listar') }}" class="filter-form">
+        <input type="hidden" name="visao" value="{{ visao }}">
+
+        <div>
+            <label for="busca" class="form-label">Buscar por título, gênero ou análise</label>
+            <input type="text" id="busca" name="busca" class="form-control" placeholder="Digite para buscar..." value="{{ busca }}">
+        </div>
+
+        <div>
+            <label for="plataforma" class="form-label">Plataforma</label>
+            <select id="plataforma" name="plataforma" class="form-control">
+                <option value="">Todas as plataformas</option>
+                {% for valor, rotulo in plataformas_opcoes %}
+                    {% if valor %}
+                        <option value="{{ valor }}" {% if plataforma_selecionada == valor %}selected{% endif %}>{{ rotulo }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="ordenacao" class="form-label">Ordenar por</label>
+            <select id="ordenacao" name="ordenacao" class="form-control">
+                <option value="recente" {% if ordenacao_selecionada == 'recente' %}selected{% endif %}>Mais recentes primeiro</option>
+                <option value="antigo" {% if ordenacao_selecionada == 'antigo' %}selected{% endif %}>Mais antigos primeiro</option>
+                <option value="nota_desc" {% if ordenacao_selecionada == 'nota_desc' %}selected{% endif %}>Melhor nota</option>
+                <option value="nota_asc" {% if ordenacao_selecionada == 'nota_asc' %}selected{% endif %}>Menor nota</option>
+                <option value="titulo" {% if ordenacao_selecionada == 'titulo' %}selected{% endif %}>Nome (A - Z)</option>
+                <option value="tempo_desc" {% if ordenacao_selecionada == 'tempo_desc' %}selected{% endif %}>Mais horas jogadas</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-self: flex-end;">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            {% if busca or plataforma_selecionada or (ordenacao_selecionada and ordenacao_selecionada != 'recente') %}
+                <a href="{{ url_for('jogos.listar', visao=visao) }}" class="btn btn-secondary" title="Limpar Filtros">✕</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Listagem de Cards de Jogos -->
+{% if jogos %}
+    <div style="margin-bottom: 1.25rem; color: var(--text-muted); font-size: 0.9rem;">
+        Exibindo <strong>{{ jogos|length }}</strong> registro(s) encontrado(s).
+    </div>
+
+    <div class="games-grid">
+        {% for jogo in jogos %}
+            <div class="game-card">
+                {% if capas_jogos.get(jogo.titulo) %}
+                    <img src="{{ capas_jogos.get(jogo.titulo) }}" alt="" class="game-card-art" loading="lazy">
+                {% endif %}
+                <div>
+                    <div class="game-card-header">
+                        <h3 class="game-card-title">{{ jogo.titulo }}</h3>
+                        {% if current_user.is_authenticated and jogo.usuario_id == current_user.id and jogo.nota is not none %}
+                            <span class="game-score-badge {% if jogo.nota >= 8.5 %}score-great{% elif jogo.nota >= 7.0 %}score-good{% elif jogo.nota >= 5.0 %}score-average{% else %}score-poor{% endif %}">
+                                ★ {{ "%.1f"|format(jogo.nota) }}
+                            </span>
+                        {% elif current_user.is_authenticated and jogo.usuario_id == current_user.id %}
+                            <span class="game-score-badge score-none">Sem nota</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="game-meta-tags">
+                        <span class="meta-tag">🕹️ {{ jogo.plataforma }}</span>
+                        {% if jogo.status == 'jogando' %}
+                            <span class="meta-tag game-status-playing">▶ Jogando</span>
+                        {% elif jogo.status == 'zerado' or jogo.data_zeramento %}
+                            <span class="meta-tag">✓ Zerado</span>
+                        {% endif %}
+                        {% if jogo.genero %}
+                            <span class="meta-tag">🏷️ {{ jogo.genero }}</span>
+                        {% endif %}
+                        {% if current_user.is_authenticated and jogo.usuario_id == current_user.id and jogo.autor %}
+                            <span class="meta-tag">👤 @{{ jogo.autor.username }}</span>
+                        {% endif %}
+                        {% if current_user.is_authenticated and jogo.usuario_id == current_user.id and jogo.dificuldade %}
+                            <span class="meta-tag">⚡ {{ jogo.dificuldade }}</span>
+                        {% endif %}
+                        {% if current_user.is_authenticated and jogo.usuario_id == current_user.id and jogo.data_zeramento %}
+                            <span class="meta-tag">📅 {{ jogo.data_zeramento.strftime('%d/%m/%Y') }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="game-card-body">
+                        {% if current_user.is_authenticated and jogo.usuario_id == current_user.id %}
+                            {% if jogo.observacoes %}
+                                <p class="game-card-notes">"{{ jogo.observacoes }}"</p>
+                            {% else %}
+                                <p style="color: var(--text-muted); font-size: 0.85rem;">Nenhum comentário cadastrado.</p>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="game-card-footer">
+                    <div>
+                        {% if current_user.is_authenticated and jogo.usuario_id == current_user.id and jogo.tempo_jogado_horas %}
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">⏱️ {{ jogo.tempo_jogado_horas }}h</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-actions">
+                        <a href="{{ url_for('jogos.detalhe', id=jogo.id) }}" class="btn btn-secondary btn-sm" title="Ver Detalhes">
+                            👁️ Detalhes
+                        </a>
+                        {% if current_user.is_authenticated and jogo.usuario_id == current_user.id %}
+                            <a href="{{ url_for('jogos.editar', id=jogo.id) }}" class="btn btn-secondary btn-sm" title="Editar">
+                                ✏️
+                            </a>
+                            <button type="button" class="btn btn-danger btn-sm btn-trigger-delete" data-id="{{ jogo.id }}" data-title="{{ jogo.titulo }}" title="Excluir Jogo">
+                                🗑️
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h3 class="empty-state-title">Nenhum jogo encontrado</h3>
+        <p class="empty-state-description">
+            {% if busca or plataforma_selecionada %}
+                Nenhum registro corresponde aos filtros selecionados. Tente ajustar os termos de busca ou remover os filtros.
+            {% elif current_user.is_authenticated and visao == 'meus' %}
+                Você ainda não cadastrou nenhum jogo zerado na sua conta pessoal.
+            {% else %}
+                Nenhum jogo foi encontrado na biblioteca.
+            {% endif %}
+        </p>
+        <div>
+            {% if busca or plataforma_selecionada %}
+                <a href="{{ url_for('jogos.listar', visao=visao) }}" class="btn btn-secondary">Limpar Filtros</a>
+            {% elif current_user.is_authenticated %}
+                <a href="{{ url_for('jogos.criar') }}" class="btn btn-primary">➕ Cadastrar Primeiro Jogo</a>
+            {% else %}
+                <a href="{{ url_for('auth.registro') }}" class="btn btn-primary">✨ Criar Minha Conta</a>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal-overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <span style="font-size: 1.5rem; color: var(--danger);">⚠️</span>
+            <h3 class="modal-title" id="modalTitle">Confirmar Exclusão</h3>
+        </div>
+        <div class="modal-body">
+            Você tem certeza que deseja excluir o jogo <strong id="deleteGameTitle" style="color: var(--text-primary);"></strong>?<br>
+            Esta ação removerá o registro permanentemente do banco de dados <strong>JOGOSSALVOS</strong> e não poderá ser desfeita.
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancelar</button>
+            <form id="deleteForm" method="POST" action="">
+                {{ delete_form.hidden_tag() }}
+                <button type="submit" class="btn btn-danger">Excluir Registro</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/games.js') }}"></script>
+{% endblock %}

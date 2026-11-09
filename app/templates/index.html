@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Início - GameLog{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pagina.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="personal-dashboard">
+    <header class="dashboard-welcome">
+        <div class="dashboard-welcome-copy">
+            <span class="dashboard-kicker">{% if current_user.is_authenticated %}SEU UNIVERSO GAMER{% else %}BEM-VINDO AO GAMELOG{% endif %}</span>
+            <h1>{% if current_user.is_authenticated %}Olá, {{ current_user.nome.split()[0] }}{% else %}Sua jornada gamer começa aqui{% endif %}</h1>
+            <p>
+                {% if current_user.is_authenticated %}
+                    Sua biblioteca, seu progresso e as próximas aventuras — tudo no seu ritmo.
+                {% else %}
+                    Organize sua biblioteca, acompanhe seu progresso e descubra seu próximo jogo favorito.
+                {% endif %}
+            </p>
+            <div class="dashboard-welcome-actions">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('jogos.listar', visao='meus') }}" class="btn btn-primary">Abrir minha biblioteca <span aria-hidden="true">→</span></a>
+                    <a href="{{ url_for('jogos.criar') }}" class="dashboard-subtle-link">＋ Adicionar jogo</a>
+                {% else %}
+                    <a href="{{ url_for('auth.registro') }}" class="btn btn-primary">Criar minha conta <span aria-hidden="true">→</span></a>
+                    <a href="{{ url_for('jogos.explorar_api') }}" class="dashboard-subtle-link">Explorar catálogo</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if dashboard.ultimo_jogo %}
+            {% set ultimo = dashboard.ultimo_jogo %}
+            {% set ultima_imagem = imagens_jogos.get(ultimo.titulo, {}) %}
+            <a class="dashboard-featured-game" href="{{ url_for('jogos.detalhe', id=ultimo.id) }}">
+                {% if ultima_imagem.get('artwork') or ultima_imagem.get('cover') %}
+                    <img src="{{ ultima_imagem.get('artwork') or ultima_imagem.get('cover') }}" alt="" class="dashboard-featured-image">
+                {% endif %}
+                <span class="dashboard-featured-overlay"></span>
+                <span class="dashboard-featured-label"><span aria-hidden="true">✦</span> ADICIONADO RECENTEMENTE</span>
+                <span class="dashboard-featured-copy">
+                    <small>SUA AVENTURA MAIS NOVA</small>
+                    <strong>{{ ultimo.titulo }}</strong>
+                    <span>{{ ultimo.plataforma }}{% if ultimo.status == 'jogando' %} · Jogando{% elif ultimo.status == 'zerado' or ultimo.data_zeramento %} · Zerado{% endif %}</span>
+                </span>
+                <span class="dashboard-featured-arrow" aria-hidden="true">↗</span>
+            </a>
+        {% else %}
+            <div class="dashboard-featured-empty">
+                <span aria-hidden="true">✦</span>
+                <strong>Sua próxima aventura começa aqui</strong>
+                <small>Adicione um jogo para personalizar seu painel.</small>
+            </div>
+        {% endif %}
+    </header>
+
+    <section class="dashboard-stats" aria-label="Estatísticas da biblioteca">
+        <article class="dashboard-stat-card">
+            <span class="dashboard-stat-icon stat-icon-purple" aria-hidden="true">▣</span>
+            <span class="dashboard-stat-label">Na biblioteca</span>
+            <strong>{{ dashboard.total_jogos }}</strong>
+            <small>jogos cadastrados</small>
+        </article>
+        <article class="dashboard-stat-card">
+            <span class="dashboard-stat-icon stat-icon-green" aria-hidden="true">✓</span>
+            <span class="dashboard-stat-label">Zerados</span>
+            <strong>{{ dashboard.jogos_zerados }}</strong>
+            <small>aventuras concluídas</small>
+        </article>
+        <article class="dashboard-stat-card">
+            <span class="dashboard-stat-icon stat-icon-blue" aria-hidden="true">▶</span>
+            <span class="dashboard-stat-label">Jogando</span>
+            <strong>{{ dashboard.jogos_em_andamento }}</strong>
+            <small>em andamento</small>
+        </article>
+        <article class="dashboard-stat-card">
+            <span class="dashboard-stat-icon stat-icon-amber" aria-hidden="true">◷</span>
+            <span class="dashboard-stat-label">Tempo de jogo</span>
+            <strong>{{ "%.1f"|format(dashboard.total_horas) }}<small>h</small></strong>
+            <small>registrado na biblioteca</small>
+        </article>
+        <article class="dashboard-stat-card">
+            <span class="dashboard-stat-icon stat-icon-yellow" aria-hidden="true">★</span>
+            <span class="dashboard-stat-label">Sua nota média</span>
+            <strong>{{ "%.1f"|format(dashboard.media_nota) }}<small>/10</small></strong>
+            <small>avaliações pessoais</small>
+        </article>
+    </section>
+
+    <section class="dashboard-content-section" aria-labelledby="continuePlayingTitle">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="dashboard-kicker">RETOME DE ONDE PAROU</span>
+                <h2 id="continuePlayingTitle">Continue jogando</h2>
+            </div>
+            {% if dashboard.jogando %}
+                <a href="{{ url_for('jogos.listar', visao='meus') }}" class="dashboard-section-link">Ver biblioteca <span aria-hidden="true">→</span></a>
+            {% endif %}
+        </div>
+
+        {% if dashboard.jogando %}
+            <div class="dashboard-playing-grid">
+                {% for jogo in dashboard.jogando %}
+                    {% set jogo_imagens = imagens_jogos.get(jogo.titulo, {}) %}
+                    <a href="{{ url_for('jogos.detalhe', id=jogo.id) }}" class="dashboard-playing-card">
+                        {% if jogo_imagens.get('artwork') or jogo_imagens.get('cover') %}
+                            <img src="{{ jogo_imagens.get('artwork') or jogo_imagens.get('cover') }}" alt="" class="dashboard-playing-art">
+                        {% endif %}
+                        <span class="dashboard-playing-overlay"></span>
+                        <span class="dashboard-playing-status"><i></i> JOGANDO</span>
+                        <span class="dashboard-playing-copy">
+                            <strong>{{ jogo.titulo }}</strong>
+                            <small>{{ jogo.plataforma }}{% if jogo.tempo_jogado_horas is not none %} · {{ "%.1f"|format(jogo.tempo_jogado_horas) }}h{% endif %}</small>
+                            {% if jogo.nota is not none %}<span class="dashboard-playing-rating">★ {{ "%.1f"|format(jogo.nota) }}/10</span>{% endif %}
+                        </span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="dashboard-empty-state">
+                <span aria-hidden="true">🎮</span>
+                <div>
+                    <strong>Nenhum jogo em andamento</strong>
+                    <p>{% if current_user.is_authenticated %}Marque um jogo como “Jogando” ao adicionar ou editar um registro.{% else %}Entre ou crie sua conta para acompanhar sua biblioteca.{% endif %}</p>
+                </div>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('jogos.criar') }}" class="btn btn-secondary btn-sm">＋ Adicionar jogo</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-sm">Entrar</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="dashboard-content-section" aria-labelledby="recentGamesTitle">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="dashboard-kicker">SUA COLEÇÃO</span>
+                <h2 id="recentGamesTitle">Adicionados recentemente</h2>
+            </div>
+            <div class="dashboard-carousel-controls">
+                {% if dashboard.recentemente_adicionados %}
+                    <a href="{{ url_for('jogos.listar', visao='meus' if current_user.is_authenticated else 'todos') }}" class="dashboard-section-link">Ver biblioteca <span aria-hidden="true">→</span></a>
+                    <button type="button" class="dashboard-carousel-arrow" data-dashboard-scroll="recentGamesCarousel" data-direction="previous" aria-label="Ver jogos anteriores">‹</button>
+                    <button type="button" class="dashboard-carousel-arrow" data-dashboard-scroll="recentGamesCarousel" data-direction="next" aria-label="Ver próximos jogos">›</button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if dashboard.recentemente_adicionados %}
+            <div class="dashboard-horizontal-carousel" id="recentGamesCarousel">
+                {% for jogo in dashboard.recentemente_adicionados %}
+                    {% set jogo_imagens = imagens_jogos.get(jogo.titulo, {}) %}
+                    <article class="dashboard-library-card">
+                        <a href="{{ url_for('jogos.detalhe', id=jogo.id) }}" class="dashboard-library-card-main">
+                            <span class="dashboard-library-art">
+                                {% if jogo_imagens.get('cover') %}
+                                    <img src="{{ jogo_imagens.get('cover') }}" alt="Capa de {{ jogo.titulo }}" loading="lazy">
+                                {% else %}
+                                    <span aria-hidden="true">🎮</span>
+                                {% endif %}
+                            </span>
+                            <span class="dashboard-library-copy">
+                                <strong>{{ jogo.titulo }}</strong>
+                                <small>{{ jogo.data_criacao.strftime('%d/%m/%Y') if jogo.data_criacao else 'Data não informada' }}</small>
+                                <span class="dashboard-library-status">{% if jogo.status == 'jogando' %}▶ Jogando{% elif jogo.status == 'zerado' or jogo.data_zeramento %}✓ Zerado{% else %}Na biblioteca{% endif %}</span>
+                            </span>
+                        </a>
+                        {% if current_user.is_authenticated and jogo.usuario_id == current_user.id %}
+                            <div class="dashboard-library-actions">
+                                <a href="{{ url_for('jogos.editar', id=jogo.id) }}">Editar</a>
+                                <button type="button" class="btn-trigger-delete" data-id="{{ jogo.id }}" data-title="{{ jogo.titulo }}">Excluir</button>
+                            </div>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="dashboard-empty-state">
+                <span aria-hidden="true">📚</span>
+                <div>
+                    <strong>Sua biblioteca está pronta para começar</strong>
+                    <p>{% if current_user.is_authenticated %}Adicione seu primeiro jogo para vê-lo aparecer aqui.{% else %}Entre para registrar seus jogos e acompanhar seu progresso.{% endif %}</p>
+                </div>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('jogos.criar') }}" class="btn btn-secondary btn-sm">＋ Adicionar jogo</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-sm">Entrar</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="dashboard-content-section" aria-labelledby="topRatedTitle">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="dashboard-kicker">SEUS FAVORITOS</span>
+                <h2 id="topRatedTitle">Suas melhores avaliações</h2>
+            </div>
+            <div class="dashboard-carousel-controls">
+                {% if dashboard.melhores_avaliacoes %}
+                    <button type="button" class="dashboard-carousel-arrow" data-dashboard-scroll="topRatedCarousel" data-direction="previous" aria-label="Ver avaliações anteriores">‹</button>
+                    <button type="button" class="dashboard-carousel-arrow" data-dashboard-scroll="topRatedCarousel" data-direction="next" aria-label="Ver próximas avaliações">›</button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if dashboard.melhores_avaliacoes %}
+            <div class="dashboard-horizontal-carousel dashboard-rated-carousel" id="topRatedCarousel">
+                {% for jogo in dashboard.melhores_avaliacoes %}
+                    {% set jogo_imagens = imagens_jogos.get(jogo.titulo, {}) %}
+                    <a href="{{ url_for('jogos.detalhe', id=jogo.id) }}" class="dashboard-rated-card">
+                        <span class="dashboard-rated-cover">
+                            {% if jogo_imagens.get('cover') %}
+                                <img src="{{ jogo_imagens.get('cover') }}" alt="Capa de {{ jogo.titulo }}" loading="lazy">
+                            {% else %}
+                                <span aria-hidden="true">🎮</span>
+                            {% endif %}
+                            <span class="dashboard-rated-score">★ {{ "%.1f"|format(jogo.nota) }}</span>
+                        </span>
+                        <strong>{{ jogo.titulo }}</strong>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="dashboard-empty-state">
+                <span aria-hidden="true">★</span>
+                <div>
+                    <strong>Suas notas aparecem aqui</strong>
+                    <p>Adicione uma avaliação pessoal para destacar seus jogos favoritos.</p>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+
+    {% if jogos_para_descobrir %}
+        <section class="dashboard-content-section" aria-labelledby="discoverGamesTitle">
+            <div class="dashboard-section-heading">
+                <div>
+                    <span class="dashboard-kicker">SELEÇÃO DA IGDB</span>
+                    <h2 id="discoverGamesTitle">Descubra novos jogos</h2>
+                </div>
+                <div class="dashboard-carousel-controls">
+                    <a href="{{ url_for('jogos.explorar_api') }}" class="dashboard-section-link">Abrir catálogo <span aria-hidden="true">→</span></a>
+                    <button type="button" class="dashboard-carousel-arrow" data-dashboard-scroll="discoverGamesCarousel" data-direction="previous" aria-label="Ver recomendações anteriores">‹</button>
+                    <button type="button" class="dashboard-carousel-arrow" data-dashboard-scroll="discoverGamesCarousel" data-direction="next" aria-label="Ver próximas recomendações">›</button>
+                </div>
+            </div>
+            <div class="dashboard-horizontal-carousel" id="discoverGamesCarousel">
+                {% for jogo in jogos_para_descobrir %}
+                    <article class="dashboard-discover-card">
+                        <a href="{{ url_for('jogos.detalhe_catalogo', game_id=jogo.id) }}" class="dashboard-discover-main">
+                            <span class="dashboard-discover-cover">
+                                <img src="{{ jogo.thumbnail }}" alt="Capa de {{ jogo.title }}" loading="lazy">
+                            </span>
+                            <span class="dashboard-discover-copy">
+                                <small>{{ jogo.genre }}{% if jogo.release_date %} · {{ jogo.release_date[:4] }}{% endif %}</small>
+                                <strong>{{ jogo.title }}</strong>
+                                {% if jogo.rating is not none %}<span>★ {{ "%.1f"|format(jogo.rating) }}/100</span>{% endif %}
+                            </span>
+                        </a>
+                        {% if current_user.is_authenticated %}
+                            <a class="dashboard-discover-action" href="{{ url_for('jogos.importar_da_api', game_id=jogo.id) }}">＋ Adicionar à biblioteca</a>
+                        {% else %}
+                            <a class="dashboard-discover-action" href="{{ url_for('auth.login', next=url_for('jogos.importar_da_api', game_id=jogo.id)) }}">Entrar para adicionar</a>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+</div>
+
+{% if current_user.is_authenticated %}
+    <div class="modal-overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <span style="font-size: 1.5rem; color: var(--danger);">⚠️</span>
+                <h3 class="modal-title" id="modalTitle">Confirmar exclusão</h3>
+            </div>
+            <div class="modal-body">
+                Tem certeza de que deseja excluir <strong id="deleteGameTitle" style="color: var(--text-primary);"></strong>? Esta ação não pode ser desfeita.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancelar</button>
+                <form id="deleteForm" method="POST" action="">
+                    {{ delete_form.hidden_tag() }}
+                    <button type="submit" class="btn btn-danger">Excluir jogo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% if current_user.is_authenticated %}
+    <script src="{{ url_for('static', filename='js/games.js') }}"></script>
+{% endif %}
+{% endblock %}

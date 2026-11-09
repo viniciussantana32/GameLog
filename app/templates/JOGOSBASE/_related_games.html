@@ -1,0 +1,30 @@
+{% macro related_games_carousel(section_id, title, games) -%}
+    {% if games %}
+        <section class="game-detail-section related-games-section" aria-labelledby="{{ section_id }}Title">
+            <div class="game-detail-section-heading related-games-heading">
+                <div>
+                    <span class="game-detail-eyebrow">DESCUBRA MAIS</span>
+                    <h2 id="{{ section_id }}Title">{{ title }}</h2>
+                </div>
+                <div class="related-games-controls">
+                    <button class="game-gallery-scroll-button" type="button" data-related-scroll="{{ section_id }}" data-direction="previous" aria-label="Ver jogos anteriores">‹</button>
+                    <button class="game-gallery-scroll-button" type="button" data-related-scroll="{{ section_id }}" data-direction="next" aria-label="Ver próximos jogos">›</button>
+                </div>
+            </div>
+
+            <div class="related-games-carousel" id="{{ section_id }}">
+                {% for related_game in games %}
+                    <a class="related-game-card" href="{{ url_for('jogos.detalhe_catalogo', game_id=related_game.id) }}">
+                        <span class="related-game-cover-wrap">
+                            <img class="related-game-cover" src="{{ related_game.cover }}" alt="Capa de {{ related_game.title }}" loading="lazy">
+                        </span>
+                        <span class="related-game-info">
+                            <strong>{{ related_game.title }}</strong>
+                            <small>{{ related_game.year or 'Ano não informado' }}</small>
+                        </span>
+                    </a>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+{%- endmacro %}

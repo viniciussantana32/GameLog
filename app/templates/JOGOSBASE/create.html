@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Adicionar Jogo{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pagina.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <div style="margin-bottom: 2rem; text-align: center;">
+        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🎮</span>
+        <h1 style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary);">Adicionar Jogo à Biblioteca</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.25rem;">
+            Registre um jogo em andamento ou já finalizado na sua biblioteca.
+        </p>
+    </div>
+
+    {% if jogo_importado %}
+        <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+            <div class="alert-content">
+                <span>✨</span>
+                <span>Dados de <strong>{{ jogo_importado.title }}</strong> pré-carregados da API! Complete com sua avaliação e salve.</span>
+            </div>
+        </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('jogos.criar') }}{% if request.args.get('origem') %}?origem={{ request.args.get('origem')|int }}{% endif %}" novalidate>
+        <!-- Proteção contra CSRF -->
+        {{ form.hidden_tag() }}
+
+        <!-- Título do Jogo -->
+        <div class="form-group">
+            <label for="titulo" class="form-label">{{ form.titulo.label.text }}</label>
+            {{ form.titulo(class="form-control" + (" is-invalid" if form.titulo.errors else "")) }}
+            {% for error in form.titulo.errors %}
+                <div class="form-error">⚠️ {{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Plataforma e Gênero -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="plataforma" class="form-label">{{ form.plataforma.label.text }}</label>
+                {{ form.plataforma(class="form-control" + (" is-invalid" if form.plataforma.errors else "")) }}
+                {% for error in form.plataforma.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="genero" class="form-label">{{ form.genero.label.text }}</label>
+                {{ form.genero(class="form-control" + (" is-invalid" if form.genero.errors else "")) }}
+                {% for error in form.genero.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="status" class="form-label">{{ form.status.label.text }}</label>
+            {{ form.status(class="form-control" + (" is-invalid" if form.status.errors else "")) }}
+            {% for error in form.status.errors %}
+                <div class="form-error">⚠️ {{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Data em que Zerou e Horas Jogadas -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="data_zeramento" class="form-label">{{ form.data_zeramento.label.text }}</label>
+                {{ form.data_zeramento(class="form-control" + (" is-invalid" if form.data_zeramento.errors else ""), type="date") }}
+                {% for error in form.data_zeramento.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="tempo_jogado_horas" class="form-label">{{ form.tempo_jogado_horas.label.text }}</label>
+                {{ form.tempo_jogado_horas(class="form-control" + (" is-invalid" if form.tempo_jogado_horas.errors else "")) }}
+                {% for error in form.tempo_jogado_horas.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Nota, Dificuldade e Ano de Lançamento -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="nota" class="form-label">{{ form.nota.label.text }}</label>
+                {{ form.nota(class="form-control" + (" is-invalid" if form.nota.errors else "")) }}
+                {% for error in form.nota.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="dificuldade" class="form-label">{{ form.dificuldade.label.text }}</label>
+                {{ form.dificuldade(class="form-control" + (" is-invalid" if form.dificuldade.errors else "")) }}
+                {% for error in form.dificuldade.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="ano_lancamento" class="form-label">{{ form.ano_lancamento.label.text }}</label>
+                {{ form.ano_lancamento(class="form-control" + (" is-invalid" if form.ano_lancamento.errors else "")) }}
+                {% for error in form.ano_lancamento.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Análise e Observações -->
+        <div class="form-group">
+            <label for="observacoes" class="form-label">{{ form.observacoes.label.text }}</label>
+            {{ form.observacoes(class="form-control" + (" is-invalid" if form.observacoes.errors else "")) }}
+            {% for error in form.observacoes.errors %}
+                <div class="form-error">⚠️ {{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Ações do Formulário -->
+        <div class="form-actions">
+            <a href="{{ url_for('jogos.listar') }}" class="btn btn-secondary">
+                Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+                💾 Salvar Registro
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/games.js') }}"></script>
+{% endblock %}

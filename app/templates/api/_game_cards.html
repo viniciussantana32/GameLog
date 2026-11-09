@@ -1,0 +1,51 @@
+{% for jogo in jogos_api %}
+    <article class="api-game-card" data-game-id="{{ jogo.id }}">
+        {% if jogo.thumbnail %}
+            <a href="{{ url_for('jogos.detalhe_catalogo', game_id=jogo.id) }}" aria-label="Ver detalhes de {{ jogo.title }}">
+                <img src="{{ jogo.thumbnail }}" alt="{{ jogo.title }}" class="api-game-thumb" loading="lazy">
+            </a>
+        {% endif %}
+
+        <div class="api-game-content">
+            <div>
+                <div class="api-game-card-meta">
+                    <span class="api-badge">{{ jogo.genre }}</span>
+                    <span class="api-game-platform">🖥️ {{ jogo.platform }}</span>
+                </div>
+
+                <h3 class="api-game-title">
+                    <a href="{{ url_for('jogos.detalhe_catalogo', game_id=jogo.id) }}">
+                        {{ jogo.title }}
+                    </a>
+                </h3>
+
+                <p class="api-game-rating">
+                    {% if jogo.rating is not none %}
+                        <span aria-label="Nota global IGDB">★ {{ "%.1f"|format(jogo.rating) }}<small>/100</small></span>
+                    {% else %}
+                        <span class="api-game-rating-unavailable">Avaliação global indisponível</span>
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="api-game-footer">
+                <a href="{{ jogo.game_url }}" target="_blank" rel="noopener noreferrer" class="api-game-official-link" title="Acessar página oficial do jogo">
+                    🔗 Site Oficial
+                </a>
+                <a href="{{ url_for('jogos.detalhe_catalogo', game_id=jogo.id) }}" class="btn btn-secondary btn-sm">
+                    Detalhes
+                </a>
+
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('jogos.importar_da_api', game_id=jogo.id) }}" class="btn btn-primary btn-sm">
+                        ＋ Iniciar avaliação
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login', next=url_for('jogos.importar_da_api', game_id=jogo.id)) }}" class="btn btn-secondary btn-sm">
+                        Entrar para avaliar
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </article>
+{% endfor %}

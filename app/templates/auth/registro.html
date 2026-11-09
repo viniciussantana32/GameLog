@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Criar Conta{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pagina.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width: 580px;">
+    <div style="margin-bottom: 2rem; text-align: center;">
+        <span style="font-size: 2.75rem; display: block; margin-bottom: 0.5rem;">✨</span>
+        <h1 style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary);">Criar Nova Conta</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.35rem;">
+            Crie seu perfil gamer e comece a registrar todas as suas conquistas e jogos finalizados.
+        </p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.registro') }}" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            <label for="nome" class="form-label">{{ form.nome.label.text }}</label>
+            {{ form.nome(class="form-control" + (" is-invalid" if form.nome.errors else "")) }}
+            {% for error in form.nome.errors %}
+                <div class="form-error">⚠️ {{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="username" class="form-label">{{ form.username.label.text }}</label>
+                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
+                {% for error in form.username.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="email" class="form-label">{{ form.email.label.text }}</label>
+                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), type="email") }}
+                {% for error in form.email.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="senha" class="form-label">{{ form.senha.label.text }}</label>
+                {{ form.senha(class="form-control" + (" is-invalid" if form.senha.errors else "")) }}
+                {% for error in form.senha.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="confirmar_senha" class="form-label">{{ form.confirmar_senha.label.text }}</label>
+                {{ form.confirmar_senha(class="form-control" + (" is-invalid" if form.confirmar_senha.errors else "")) }}
+                {% for error in form.confirmar_senha.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+                🚀 Registrar e Começar
+            </button>
+        </div>
+    </form>
+
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.95rem; color: var(--text-secondary);">
+        Já possui uma conta criada?
+        <a href="{{ url_for('auth.login') }}" style="font-weight: 600; color: var(--primary);">
+            Faça login aqui &rarr;
+        </a>
+    </div>
+</div>
+{% endblock %}
+

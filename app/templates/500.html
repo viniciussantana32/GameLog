@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Erro Interno do Servidor (500){% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pagina.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="empty-state" style="padding: 5rem 2rem;">
+    <div class="empty-state-icon" style="font-size: 5rem; color: var(--danger);">💥 500</div>
+    <h1 class="empty-state-title" style="font-size: 2rem;">Erro no Servidor</h1>
+    <p class="empty-state-description">
+        Ocorreu um erro inesperado ao processar a requisição no sistema ou no banco de dados JOGOSSALVOS. Nossa equipe já foi notificada.
+    </p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('jogos.index') }}" class="btn btn-primary">
+            🏠 Voltar ao Início
+        </a>
+        <a href="javascript:location.reload();" class="btn btn-secondary">
+            🔄 Tentar Novamente
+        </a>
+    </div>
+</div>
+{% endblock %}
+

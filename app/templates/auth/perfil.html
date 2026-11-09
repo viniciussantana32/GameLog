@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Meu Perfil - {{ usuario.nome }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pagina.css') }}">
+<style>
+.profile-header-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1)), var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow-md);
+}
+
+.profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-info {
+    flex-grow: 1;
+}
+
+.profile-name {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.profile-username {
+    font-size: 1rem;
+    color: var(--primary);
+    font-weight: 600;
+    margin-top: 0.25rem;
+}
+
+.profile-bio {
+    margin-top: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    max-width: 650px;
+    line-height: 1.5;
+}
+
+.profile-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.profile-grid-forms {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 2rem;
+}
+
+@media (max-width: 900px) {
+    .profile-grid-forms {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Cartão de Destaque do Perfil -->
+<div class="profile-header-card">
+    <div class="profile-avatar">
+        {% if usuario.avatar_url %}
+            <img src="{{ usuario.avatar_url }}" alt="Avatar de {{ usuario.nome }}" onerror="this.style.display='none'">
+        {% else %}
+            {{ usuario.nome[:1].upper() }}
+        {% endif %}
+    </div>
+
+    <div class="profile-info">
+        <h1 class="profile-name">
+            {{ usuario.nome }}
+            {% if usuario.is_admin %}
+                <span class="badge" style="background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); font-size: 0.8rem;">
+                    🛡️ Administrador
+                </span>
+            {% else %}
+                <span class="badge" style="background-color: rgba(99, 102, 241, 0.15); color: #818cf8; border-color: rgba(99, 102, 241, 0.3); font-size: 0.8rem;">
+                    🎮 Gamer
+                </span>
+            {% endif %}
+        </h1>
+        <div class="profile-username">@{{ usuario.username }} &bull; {{ usuario.email }}</div>
+
+        {% if usuario.bio %}
+            <p class="profile-bio">{{ usuario.bio }}</p>
+        {% else %}
+            <p class="profile-bio" style="font-style: italic; color: var(--text-muted);">
+                Nenhuma biografia informada ainda. Edite abaixo para se apresentar à comunidade.
+            </p>
+        {% endif %}
+
+        <div class="profile-badges">
+            <span class="badge">🏆 {{ usuario.total_jogos_zerados }} Jogos Zerados</span>
+            <span class="badge">📅 Membro desde {{ usuario.data_criacao.strftime('%d/%m/%Y') }}</span>
+        </div>
+    </div>
+
+    <div>
+        <a href="{{ url_for('jogos.listar', visao='meus') }}" class="btn btn-secondary">
+            📚 Meus Jogos ({{ usuario.total_jogos_zerados }})
+        </a>
+    </div>
+</div>
+
+<!-- Seção com Formulários de Edição de Dados e Senha -->
+<div class="profile-grid-forms">
+    <!-- Formulário 1: Dados do Perfil -->
+    <div class="form-card" style="margin: 0; max-width: 100%;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+            ✏️ Editar Perfil
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Atualize suas informações pessoais e de exibição.
+        </p>
+
+        <form method="POST" action="{{ url_for('auth.perfil') }}" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                <label for="nome" class="form-label">{{ form.nome.label.text }}</label>
+                {{ form.nome(class="form-control" + (" is-invalid" if form.nome.errors else "")) }}
+                {% for error in form.nome.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username" class="form-label">{{ form.username.label.text }}</label>
+                    {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
+                    {% for error in form.username.errors %}
+                        <div class="form-error">⚠️ {{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">{{ form.email.label.text }}</label>
+                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                    {% for error in form.email.errors %}
+                        <div class="form-error">⚠️ {{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="avatar_url" class="form-label">{{ form.avatar_url.label.text }}</label>
+                {{ form.avatar_url(class="form-control" + (" is-invalid" if form.avatar_url.errors else "")) }}
+                {% for error in form.avatar_url.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="bio" class="form-label">{{ form.bio.label.text }}</label>
+                {{ form.bio(class="form-control" + (" is-invalid" if form.bio.errors else "")) }}
+                {% for error in form.bio.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions" style="margin-top: 1.5rem; padding-top: 1rem;">
+                <button type="submit" class="btn btn-primary">
+                    💾 Atualizar Perfil
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Formulário 2: Alteração de Senha -->
+    <div class="form-card" style="margin: 0; max-width: 100%;">
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+            🔒 Segurança e Senha
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Troque sua senha periodicamente para manter sua conta protegida.
+        </p>
+
+        <form method="POST" action="{{ url_for('auth.alterar_senha') }}" novalidate>
+            {{ form_senha.hidden_tag() }}
+
+            <div class="form-group">
+                <label for="senha_atual" class="form-label">{{ form_senha.senha_atual.label.text }}</label>
+                {{ form_senha.senha_atual(class="form-control" + (" is-invalid" if form_senha.senha_atual.errors else "")) }}
+                {% for error in form_senha.senha_atual.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="nova_senha" class="form-label">{{ form_senha.nova_senha.label.text }}</label>
+                {{ form_senha.nova_senha(class="form-control" + (" is-invalid" if form_senha.nova_senha.errors else "")) }}
+                {% for error in form_senha.nova_senha.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="confirmar_nova_senha" class="form-label">{{ form_senha.confirmar_nova_senha.label.text }}</label>
+                {{ form_senha.confirmar_nova_senha(class="form-control" + (" is-invalid" if form_senha.confirmar_nova_senha.errors else "")) }}
+                {% for error in form_senha.confirmar_nova_senha.errors %}
+                    <div class="form-error">⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions" style="margin-top: 1.5rem; padding-top: 1rem;">
+                <button type="submit" class="btn btn-secondary" style="border-color: #475569;">
+                    🔑 Alterar Senha
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

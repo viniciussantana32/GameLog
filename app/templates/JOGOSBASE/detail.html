@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}{{ dados_jogo.title }} - GameLog{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pagina.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/game-detail.css') }}">
+{% endblock %}
+
+{% block content %}
+{% from "JOGOSBASE/_related_games.html" import related_games_carousel %}
+<article class="game-detail">
+    <header class="game-detail-hero">
+        {% if dados_jogo.artworks %}
+            <img class="game-detail-backdrop" src="{{ dados_jogo.artworks[0] }}" alt="" fetchpriority="high">
+            <img class="game-detail-backdrop-soft" src="{{ dados_jogo.artworks[0] }}" alt="" aria-hidden="true">
+        {% endif %}
+        <div class="game-detail-backdrop-overlay"></div>
+        <div class="game-detail-hero-content">
+            <a href="{{ voltar_url }}" class="game-detail-back-link">← Voltar</a>
+            <span class="game-detail-eyebrow">FICHA DO JOGO</span>
+            <h1>{{ dados_jogo.title }}</h1>
+            <div class="game-detail-hero-meta">
+                {% if ano_lancamento %}<span>{{ ano_lancamento }}</span>{% endif %}
+                {% if dados_jogo.developer %}<span>{{ dados_jogo.developer }}</span>{% endif %}
+                {% if dados_jogo.genre %}<span>{{ dados_jogo.genre }}</span>{% endif %}
+            </div>
+        </div>
+    </header>
+
+    <section class="game-detail-overview" aria-label="Informações do jogo">
+        <div class="game-detail-cover-wrap">
+            {% if dados_jogo.cover or dados_jogo.thumbnail %}
+                <img class="game-detail-cover" src="{{ dados_jogo.cover or dados_jogo.thumbnail }}" alt="Capa de {{ dados_jogo.title }}">
+            {% else %}
+                <div class="game-detail-cover-placeholder" aria-hidden="true">🎮</div>
+            {% endif %}
+        </div>
+
+        <div class="game-detail-information">
+            <span class="game-detail-eyebrow">SOBRE O JOGO</span>
+            <h2>{{ dados_jogo.title }}</h2>
+            {% if dados_jogo.short_description %}
+                <p class="game-detail-summary">{{ dados_jogo.short_description }}</p>
+            {% endif %}
+            <dl class="game-detail-facts">
+                <div><dt>Desenvolvedora</dt><dd>{{ dados_jogo.developer or 'Não informada pela IGDB' }}</dd></div>
+                <div><dt>Distribuidora</dt><dd>{{ dados_jogo.publisher or 'Não informada pela IGDB' }}</dd></div>
+                <div><dt>Lançamento</dt><dd>{{ dados_jogo.release_date or ano_lancamento or 'Não informado' }}</dd></div>
+                <div><dt>Gêneros</dt><dd>{{ dados_jogo.genre or 'Não informado' }}{% if dados_jogo.igdb_genre %} · {{ dados_jogo.igdb_genre }}{% endif %}</dd></div>
+                <div><dt>Plataformas</dt><dd>{{ dados_jogo.platform or 'Não informado' }}</dd></div>
+            </dl>
+            {% if dados_jogo.game_url %}
+                <a class="game-detail-source" href="{{ dados_jogo.game_url }}" target="_blank" rel="noopener noreferrer">Abrir página do jogo na IGDB ↗</a>
+            {% endif %}
+        </div>
+
+        <aside class="game-detail-scores" aria-label="Avaliações">
+            <div class="game-detail-score-card">
+                <span class="game-detail-score-label">NOTA GLOBAL IGDB</span>
+                {% if dados_jogo.rating is not none %}
+                    <strong class="game-detail-score-value"><span>★</span> {{ "%.1f"|format(dados_jogo.rating) }}<small>/100</small></strong>
+                    {% if dados_jogo.rating_count %}
+                        <span class="game-detail-score-caption">{{ dados_jogo.rating_count }} avaliações</span>
+                    {% endif %}
+                {% else %}
+                    <span class="game-detail-score-unavailable">Sem nota global disponível</span>
+                {% endif %}
+            </div>
+
+            <div class="game-detail-score-card">
+                <span class="game-detail-score-label">MÉDIA DA COMUNIDADE GAMELOG</span>
+                {% if avaliacao_comunidade %}
+                    <strong class="game-detail-score-value"><span>★</span> {{ "%.1f"|format(avaliacao_comunidade.rating) }}<small>/10</small></strong>
+                    <span class="game-detail-score-caption">{{ avaliacao_comunidade.count }} avaliações</span>
+                {% else %}
+                    <span class="game-detail-score-unavailable">Ainda sem avaliações suficientes</span>
+                {% endif %}
+            </div>
+        </aside>
+    </section>
+
+    <section class="game-detail-experience" aria-labelledby="experienceTitle">
+        <div class="game-detail-section-heading">
+            <div>
+                <span class="game-detail-eyebrow">SEU DIÁRIO GAMER</span>
+                <h2 id="experienceTitle">Minha experiência</h2>
+            </div>
+        </div>
+
+        {% if avaliacao_pessoal %}
+            <div class="game-experience-content">
+                <div class="game-experience-stats">
+                    <div>
+                        <span>Minha nota</span>
+                        <strong>{% if avaliacao_pessoal.nota is not none %}★ {{ "%.1f"|format(avaliacao_pessoal.nota) }}/10{% else %}Não avaliado{% endif %}</strong>
+                    </div>
+                    <div>
+                        <span>Status</span>
+                        <strong>{% if avaliacao_pessoal.status == 'jogando' %}Jogando{% elif avaliacao_pessoal.status == 'zerado' or avaliacao_pessoal.data_zeramento %}Zerado{% else %}Status não cadastrado{% endif %}</strong>
+                    </div>
+                    {% if avaliacao_pessoal.tempo_jogado_horas is not none %}
+                        <div>
+                            <span>Tempo jogado</span>
+                            <strong>{{ "%.1f"|format(avaliacao_pessoal.tempo_jogado_horas) }} horas</strong>
+                        </div>
+                    {% endif %}
+                    {% if avaliacao_pessoal.data_zeramento %}
+                        <div>
+                            <span>Data em que zerou</span>
+                            <strong>{{ avaliacao_pessoal.data_zeramento.strftime('%d/%m/%Y') }}</strong>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if avaliacao_pessoal.observacoes %}
+                    <div class="game-experience-review">
+                        <span>Minhas observações</span>
+                        <p>{{ avaliacao_pessoal.observacoes }}</p>
+                    </div>
+                {% endif %}
+
+                {% if pode_editar %}
+                    <div class="game-experience-actions">
+                        <a href="{{ url_for('jogos.editar', id=avaliacao_pessoal.id) }}" class="btn btn-secondary">Editar avaliação</a>
+                        <button type="button" class="btn btn-danger btn-trigger-delete" data-id="{{ avaliacao_pessoal.id }}" data-title="{{ dados_jogo.title }}">Excluir avaliação</button>
+                    </div>
+                {% endif %}
+            </div>
+        {% elif current_user.is_authenticated %}
+            <div class="game-detail-empty game-detail-empty-action">
+                <p>Registre sua nota, tempo jogado e lembranças deste jogo.</p>
+                <a href="{{ iniciar_avaliacao_url }}" class="btn btn-primary">＋ Iniciar avaliação</a>
+            </div>
+        {% else %}
+            <div class="game-detail-empty game-detail-empty-action">
+                <p>Entre na sua conta para registrar sua experiência com este jogo.</p>
+                <a href="{{ iniciar_avaliacao_url }}" class="btn btn-primary">Entrar para avaliar</a>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="game-detail-section" aria-labelledby="galleryTitle">
+        <div class="game-detail-section-heading">
+            <div>
+                <span class="game-detail-eyebrow">IMAGENS DO JOGO</span>
+                <h2 id="galleryTitle">Galeria</h2>
+            </div>
+            {% if dados_jogo.screenshots %}
+                <div class="game-gallery-controls">
+                    <span>{{ dados_jogo.screenshots|length }} imagens</span>
+                    <button class="game-gallery-scroll-button" type="button" data-gallery-scroll="previous" aria-label="Ver imagens anteriores">‹</button>
+                    <button class="game-gallery-scroll-button" type="button" data-gallery-scroll="next" aria-label="Ver próximas imagens">›</button>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if dados_jogo.screenshots %}
+            <div class="game-gallery" id="gameGallery">
+                {% for screenshot in dados_jogo.screenshots %}
+                    <button class="game-gallery-item" type="button" data-gallery-index="{{ loop.index0 }}" aria-label="Ampliar imagem {{ loop.index }}">
+                        <img src="{{ screenshot }}" alt="Captura de tela de {{ dados_jogo.title }}" loading="lazy">
+                        <span aria-hidden="true">⌕</span>
+                    </button>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="game-detail-empty">Ainda não há capturas de tela disponíveis para este jogo.</div>
+        {% endif %}
+    </section>
+
+    {{ related_games_carousel('similarGames', 'Jogos semelhantes', jogos_semelhantes) }}
+    {{ related_games_carousel('franchiseGames', 'Mais da franquia', jogos_franquia) }}
+</article>
+
+{% if pode_editar %}
+    <div class="modal-overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <span style="font-size: 1.5rem; color: var(--danger);">⚠️</span>
+                <h3 class="modal-title" id="modalTitle">Excluir avaliação</h3>
+            </div>
+            <div class="modal-body">
+                Tem certeza que deseja excluir sua avaliação de <strong id="deleteGameTitle"></strong>? Esta ação não pode ser desfeita.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancelar</button>
+                <form id="deleteForm" method="POST" action="">
+                    {{ delete_form.hidden_tag() }}
+                    <button type="submit" class="btn btn-danger">Excluir avaliação</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% if dados_jogo.screenshots %}
+    <dialog class="game-gallery-dialog" id="gameGalleryDialog" aria-label="Visualizador da galeria">
+        <button class="game-gallery-close" type="button" aria-label="Fechar galeria">×</button>
+        <button class="game-gallery-nav game-gallery-previous" type="button" aria-label="Imagem anterior">‹</button>
+        <img class="game-gallery-dialog-image" id="gameGalleryDialogImage" alt="">
+        <button class="game-gallery-nav game-gallery-next" type="button" aria-label="Próxima imagem">›</button>
+        <span class="game-gallery-counter" id="gameGalleryCounter"></span>
+    </dialog>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if pode_editar %}
+    <script src="{{ url_for('static', filename='js/games.js') }}"></script>
+{% endif %}
+{% if dados_jogo.screenshots or jogos_semelhantes or jogos_franquia %}
+    <script src="{{ url_for('static', filename='js/game-detail.js') }}"></script>
+{% endif %}
+{% endblock %}
